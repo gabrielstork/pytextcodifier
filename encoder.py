@@ -14,7 +14,7 @@ class Text:
         self.name = os.path.basename(path)
 
     def encode(self, size=(250, 250)):
-        idx_list = [CHARS.index(char) for char in CHARS]
+        idx_list = [CHARS.index(char) for char in self.text]
         image = np.array(np.random.randint(0, 255, size), dtype=np.uint8)
         ravel = image.ravel()[8:]
 
@@ -24,12 +24,19 @@ class Text:
 
         for i in range(-1, -identifier.shape[0] - 1, -1):
             try:
-                identifier[i] = factor[i]
+                identifier[i] = int(factor[i])
             except IndexError:
                 break
 
-        image = np.insert(ravel, 0, identifier)
-        self.image = image.reshape(250, 250)
+        ravel = np.insert(ravel, 0, identifier)
+
+        if ravel.shape[0] < len(idx_list):
+            raise ValueError("image size too small")
+
+        for pixel, char in zip(range(8, len(ravel), int(factor)), idx_list):
+            ravel[pixel] = char
+
+        self.image = ravel.reshape(size)
 
     def save(self, extension="png"):
         name = self.name.split(".")[0]
