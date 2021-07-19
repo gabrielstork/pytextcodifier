@@ -11,7 +11,9 @@ class Text:
     def __init__(self, path):
         with open(path, "r") as file:
             self.text = file.read()
-        self.name = os.path.basename(path)
+
+        name = os.path.basename(path)
+        self.name = ".".join(name.split(".")[:-1])
 
     def encode(self, size=(250, 250)):
         idx_list = [CHARS.index(char) for char in self.text]
@@ -30,17 +32,17 @@ class Text:
 
         ravel = np.insert(ravel, 0, identifier)
 
-        if ravel.shape[0] < len(idx_list):
+        if len(ravel) < len(idx_list):
             raise ValueError("image size too small")
 
-        for pixel, char in zip(range(8, len(ravel), int(factor)), idx_list):
+        for pixel, char in zip(range(8, len(ravel) - int(factor),
+                                     int(factor)), idx_list):
             ravel[pixel] = char
 
         self.image = ravel.reshape(size)
 
-    def save(self, extension="png"):
-        name = self.name.split(".")[0]
-        cv.imwrite(f"{name}.{extension}", self.image)
+    def save(self, file_format="png"):
+        cv.imwrite(f"{self.name}.{file_format}", self.image)
 
     def show(self):
         cv.imshow("Image", self.image)
