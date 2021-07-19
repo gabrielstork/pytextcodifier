@@ -7,7 +7,7 @@ import cv2 as cv
 CHARS = list(string.printable)
 
 
-class Text:
+class Encoder:
     def __init__(self, path):
         with open(path, "r") as file:
             self.text = file.read()
@@ -41,10 +41,36 @@ class Text:
 
         self.image = ravel.reshape(size)
 
-    def save(self, file_format="png"):
-        cv.imwrite(f"{self.name}.{file_format}", self.image)
-
     def show(self):
         cv.imshow("Image", self.image)
         cv.waitKey(0)
         cv.destroyAllWindows()
+
+    def save(self, path):
+        cv.imwrite(path, self.image)
+
+
+class Decoder:
+    def __init__(self, path):
+        self.image = cv.imread(path, cv.IMREAD_GRAYSCALE)
+        self.text = ""
+
+        name = os.path.basename(path)
+        self.name = ".".join(name.split(".")[:-1])
+
+    def decode(self):
+        ravel = self.image.ravel()
+        identifier = ravel[:8]
+
+        factors = [str(n) for n in identifier]
+        factor = int("".join(factors))
+
+        for pos in range(8, len(ravel) - factor, factor):
+            self.text += CHARS[ravel[pos]]
+
+    def show(self):
+        print(self.text)
+
+    def save(self, path):
+        with open(path, "w") as file:
+            file.write(self.text)
