@@ -29,7 +29,7 @@ text.show()
 
 ```python
 # Saving the image
-image.save("example.png")
+text.save("example.png")
 ```
 
 ## Decoding an Image File
