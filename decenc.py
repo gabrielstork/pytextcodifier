@@ -1,4 +1,3 @@
-import os
 import string
 import numpy as np
 import cv2 as cv
@@ -11,9 +10,6 @@ class Encoder:
     def __init__(self, path):
         with open(path, "r") as file:
             self.text = file.read()
-
-        name = os.path.basename(path)
-        self.name = ".".join(name.split(".")[:-1])
 
     def encode(self, size=(250, 250)):
         idx_list = [CHARS.index(char) for char in self.text]
@@ -54,9 +50,6 @@ class Decoder:
     def __init__(self, path):
         self.image = cv.imread(path, cv.IMREAD_GRAYSCALE)
         self.text = ""
-
-        name = os.path.basename(path)
-        self.name = ".".join(name.split(".")[:-1])
 
     def decode(self):
         ravel = self.image.ravel()
