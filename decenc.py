@@ -1,19 +1,18 @@
-import string
 import numpy as np
 import cv2 as cv
 
 
-CHARS = list(string.printable)
+CHARS = [chr(i) for i in range(256)]
 
 
 class Encoder:
     def __init__(self, path):
-        with open(path, "r") as file:
+        with open(path, 'r') as file:
             self.text = file.read()
 
     def encode(self, size=(250, 250)):
         idx_list = [CHARS.index(char) for char in self.text]
-        image = np.array(np.random.randint(0, 255, size), dtype=np.uint8)
+        image = np.array(np.random.randint(0, 256, size), dtype=np.uint8)
         ravel = image.ravel()[8:]
 
         identifier = np.zeros(8, dtype=np.uint8)
@@ -38,7 +37,7 @@ class Encoder:
         self.image = ravel.reshape(size)
 
     def show(self):
-        cv.imshow("Image", self.image)
+        cv.imshow('Encoded Image', self.image)
         cv.waitKey(0)
         cv.destroyAllWindows()
 
@@ -49,14 +48,14 @@ class Encoder:
 class Decoder:
     def __init__(self, path):
         self.image = cv.imread(path, cv.IMREAD_GRAYSCALE)
-        self.text = ""
+        self.text = ''
 
     def decode(self):
         ravel = self.image.ravel()
         identifier = ravel[:8]
 
         factors = [str(n) for n in identifier]
-        factor = int("".join(factors))
+        factor = int(''.join(factors))
 
         for pos in range(8, len(ravel) - factor, factor):
             self.text += CHARS[ravel[pos]]
@@ -65,5 +64,5 @@ class Decoder:
         print(self.text)
 
     def save(self, path):
-        with open(path, "w") as file:
+        with open(path, 'w') as file:
             file.write(self.text)
