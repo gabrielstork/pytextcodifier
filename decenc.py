@@ -16,6 +16,7 @@ class Encoder:
 
         idx_list = [CHARS.index(char) for char in self.text]
         image = np.array(np.random.randint(0, 256, size), dtype=np.uint8)
+        
         ravel = image.ravel()[8:]
         factor = str(int(ravel.shape[0] / len(idx_list)))
 
@@ -26,12 +27,12 @@ class Encoder:
                 break
 
         if len(ravel) < len(idx_list):
-            raise ValueError("image size is too small")
+            raise ValueError('image size is too small')
         else:
             if private:
-                print("The generated image is private.\n"
-                      "You can get the correct text knowing the identifier "
-                      "while decoding it.\n"
+                print('The generated image is private.\n'
+                      'You can get the correct text knowing the identifier '
+                      'while decoding it.\n'
                       f"Identifier: {''.join([str(n) for n in identifier])}")
                 ravel = np.insert(ravel, 0, ZEROS)
             else:
@@ -55,16 +56,16 @@ class Encoder:
 class Decoder:
     def __init__(self, path):
         self.image = cv.imread(path, cv.IMREAD_GRAYSCALE)
-        self.text = ""
+        self.text = ''
 
     def decode(self):
         ravel = self.image.ravel()
         identifier = ravel[:8]
 
         if (identifier == ZEROS).all():
-            idf = str(input("This image is private.\n"
-                            "Enter the identifier to get the text correctly.\n"
-                            "Identifier: "))
+            idf = str(input('This image is private.\n'
+                            'Enter the identifier to get the text correctly.\n'
+                            'Identifier: '))
             factor = int(idf)
         else:
             factors = [str(n) for n in identifier]
