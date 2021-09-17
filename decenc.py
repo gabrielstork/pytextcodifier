@@ -1,15 +1,17 @@
 import numpy as np
 import cv2 as cv
 
-
 CHARS = [chr(i) for i in range(256)]
 ZEROS = np.zeros(8, dtype=np.uint8)
 
 
 class Encoder:
-    def __init__(self, path):
-        with open(path, 'r') as file:
-            self.text = file.read()
+    def __init__(self, text, is_file=False):
+        if is_file:
+            with open(text, 'r') as file:
+                self.text = file.read()
+        else:
+            self.text = text
 
     def encode(self, size=(250, 250), private=False):
         identifier = ZEROS.copy()
@@ -30,10 +32,7 @@ class Encoder:
             raise ValueError('image size is too small')
         else:
             if private:
-                print('The generated image is private.\n'
-                      'You can get the correct text knowing the identifier '
-                      'while decoding it.\n'
-                      f"Identifier: {''.join([str(n) for n in identifier])}")
+                print(f'Identifier: {"".join([str(n) for n in identifier])}')
                 ravel = np.insert(ravel, 0, ZEROS)
             else:
                 ravel = np.insert(ravel, 0, identifier)
@@ -63,9 +62,7 @@ class Decoder:
         identifier = ravel[:8]
 
         if (identifier == ZEROS).all():
-            idf = str(input('This image is private.\n'
-                            'Enter the identifier to get the text correctly.\n'
-                            'Identifier: '))
+            idf = str(input('Identifier: '))
             factor = int(idf)
         else:
             factors = [str(n) for n in identifier]
