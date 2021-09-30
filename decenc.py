@@ -13,20 +13,25 @@ class Encoder:
         else:
             self.text = text
 
-    def encode(self, size: tuple = (250, 250), private: bool = False) -> None:
+    def _set_identifier(self, factor: str) -> np.ndarray:
         identifier = ZEROS.copy()
-
-        idx_list = [CHARS.index(char) for char in self.text]
-        image = np.array(np.random.randint(0, 256, size), dtype=np.uint8)
-        
-        ravel = image.ravel()[8:]
-        factor = str(int(ravel.shape[0] / len(idx_list)))
 
         for i in range(-1, -identifier.shape[0] - 1, -1):
             try:
                 identifier[i] = int(factor[i])
             except IndexError:
                 break
+
+        return identifier
+
+    def encode(self, size: tuple = (250, 250), private: bool = False) -> None:
+        idx_list = [CHARS.index(char) for char in self.text]
+        image = np.array(np.random.randint(0, 256, size), dtype=np.uint8)
+
+        ravel = image.ravel()[8:]
+        factor = str(int(ravel.shape[0] / len(idx_list)))
+
+        identifier = self._set_identifier(factor)
 
         if len(ravel) < len(idx_list):
             raise ValueError('image size is too small')
