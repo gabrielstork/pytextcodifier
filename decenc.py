@@ -13,16 +13,23 @@ class Encoder:
         else:
             self.text = text
 
-    def _set_identifier(self, factor: str) -> np.ndarray:
-        identifier = ZEROS.copy()
+        self.identifier = ZEROS.copy()
 
-        for i in range(-1, -identifier.shape[0] - 1, -1):
+    def _set_identifier(self, factor: str):
+        for i in range(-1, -self.identifier.shape[0] - 1, -1):
             try:
-                identifier[i] = int(factor[i])
+                self.identifier[i] = int(factor[i])
             except IndexError:
                 break
 
-        return identifier
+    def _insert_identifier(self, ravel, private: bool):
+        if private:
+            ravel = np.insert(ravel, 0, ZEROS)
+            print(f'Identifier: {"".join([str(n) for n in self.identifier])}')
+        else:
+            ravel = np.insert(ravel, 0, self.identifier)
+
+        return ravel
 
     def encode(self, size: tuple = (250, 250), private: bool = False) -> None:
         idx_list = [CHARS.index(char) for char in self.text]
@@ -31,22 +38,17 @@ class Encoder:
         ravel = image.ravel()[8:]
         factor = str(int(ravel.shape[0] / len(idx_list)))
 
-        identifier = self._set_identifier(factor)
+        self._set_identifier(factor)
 
         if len(ravel) < len(idx_list):
             raise ValueError('image size is too small')
-        else:
-            if private:
-                print(f'Identifier: {"".join([str(n) for n in identifier])}')
-                ravel = np.insert(ravel, 0, ZEROS)
-            else:
-                ravel = np.insert(ravel, 0, identifier)
 
-            for pixel, char in zip(range(8, len(ravel) - int(factor),
-                                         int(factor)), idx_list):
-                ravel[pixel] = char
+        ravel = self._insert_identifier(ravel, private)
 
-            self.image = ravel.reshape(size)
+        for pixel, char in zip(range(8, len(ravel) - int(factor), int(factor)), idx_list):
+            ravel[pixel] = char
+
+        self.image = ravel.reshape(size)
 
     def show(self) -> None:
         cv.imshow('Encoded Image', self.image)
