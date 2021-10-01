@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+import pathlib
 
 CHARS = [chr(i) for i in range(256)]
 ZEROS = np.zeros(8, dtype=np.uint8)
@@ -14,6 +15,8 @@ class Encoder:
             self.text = text
 
         self.identifier = ZEROS.copy()
+        self._image = ZEROS.copy()
+        self._private = None
 
     def _set_identifier(self, factor: str):
         for i in range(-1, -self.identifier.shape[0] - 1, -1):
@@ -21,17 +24,18 @@ class Encoder:
                 self.identifier[i] = int(factor[i])
             except IndexError:
                 break
-
-    def _insert_identifier(self, ravel: np.ndarray, private: bool) -> np.ndarray:
-        if private:
+        
+    def _insert_identifier(self, ravel: np.ndarray) -> np.ndarray:
+        if self._private:
             joined_ravel = np.insert(ravel, 0, ZEROS)
-            print(f'Identifier: {"".join([str(n) for n in self.identifier])}')
         else:
             joined_ravel = np.insert(ravel, 0, self.identifier)
 
         return joined_ravel
 
     def encode(self, size: tuple = (250, 250), private: bool = False) -> None:
+        self._private = private
+
         image = np.array(np.random.randint(0, 256, size), dtype=np.uint8)
         partial_ravel = image.ravel()[8:]
 
@@ -43,20 +47,29 @@ class Encoder:
         if len(partial_ravel) < len(idx_list):
             raise ValueError('image size is too small')
 
-        ravel = self._insert_identifier(partial_ravel, private)
+        ravel = self._insert_identifier(partial_ravel)
 
-        for pixel, char in zip(range(8, len(ravel) - int(factor), int(factor)), idx_list):
+        pos = zip(range(8, len(ravel) - int(factor), int(factor)), idx_list)
+
+        for pixel, char in pos:
             ravel[pixel] = char
 
-        self.image = ravel.reshape(size)
+        self._image = ravel.reshape(size)
 
     def show(self) -> None:
-        cv.imshow('Encoded Image', self.image)
+        cv.imshow('Encoded Image', self._image)
         cv.waitKey(0)
         cv.destroyAllWindows()
 
     def save(self, path: str) -> None:
-        cv.imwrite(path, self.image)
+        if self._private:
+            image_path = pathlib.Path(path)
+            cv.imwrite(
+                str(image_path.parent.resolve() / f'key_{image_path.name}'),
+                self.identifier,
+            )
+
+        cv.imwrite(path, self._image)
 
 
 class Decoder:
