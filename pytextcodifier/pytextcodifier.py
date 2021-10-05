@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 import pathlib
+import typing
 
 CHARS = [chr(i) for i in range(256)]
 ZEROS = np.zeros(8, dtype=np.uint8)
@@ -49,7 +50,7 @@ class Encoder:
 
         ravel = self._insert_identifier(partial_ravel)
 
-        pos = zip(range(8, len(ravel) - int(factor), int(factor)), idx_list)
+        pos = zip(range(8, len(ravel), int(factor)), idx_list)
 
         for pixel, char in pos:
             ravel[pixel] = char
@@ -77,16 +78,29 @@ class Decoder:
         self.image = cv.imread(path, cv.IMREAD_GRAYSCALE)
         self.text = ''
 
-    def decode(self) -> None:
+    def _get_identifier(self, key: str) -> np.ndarray:
+        identifier = cv.imread(key, cv.IMREAD_GRAYSCALE)
+        identifier = identifier.ravel()
+
+        return identifier
+
+    def _get_factor(self, identifier: np.ndarray) -> int:
+        factor = [str(n) for n in identifier]
+        factor = int(''.join(factor))
+
+        return factor
+
+    def decode(self, key: typing.Optional[str] = None) -> None:
         ravel = self.image.ravel()
+
         identifier = ravel[:8]
 
         if (identifier == ZEROS).all():
-            idf = str(input('Identifier: '))
-            factor = int(idf)
+            if key is not None:
+                identifier = self._get_identifier(key)
+                factor = self._get_factor(identifier)
         else:
-            factors = [str(n) for n in identifier]
-            factor = int(''.join(factors))
+            factor = self._get_factor(identifier)
 
         for pos in range(8, len(ravel) - factor, factor):
             self.text += CHARS[ravel[pos]]
