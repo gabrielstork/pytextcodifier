@@ -9,7 +9,7 @@ setuptools.setup(
     description='Codify your text files or Python strings.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/gabrielstork/directory-structure',
+    url='https://github.com/gabrielstork/pytextcodifier',
     author='Gabriel Stork',
     author_email='storkdeveloper@gmail.com',
     license='MIT',
