@@ -16,8 +16,8 @@ class Encoder:
             self.text = text
 
         self.identifier = ZEROS.copy()
-        self._image = ZEROS.copy()
-        self._private = None
+        self._stop = ZEROS.copy()
+        self._image = np.zeros((250, 250))
 
     def _set_identifier(self, factor: str):
         for i in range(-1, -self.identifier.shape[0] - 1, -1):
@@ -25,49 +25,54 @@ class Encoder:
                 self.identifier[i] = int(factor[i])
             except IndexError:
                 break
-        
-    def _insert_identifier(self, ravel: np.ndarray) -> np.ndarray:
-        if self._private:
-            joined_ravel = np.insert(ravel, 0, ZEROS)
-        else:
-            joined_ravel = np.insert(ravel, 0, self.identifier)
 
-        return joined_ravel
+    def _set_stop(self, pixel: str):
+        for i in range(-1, -self._stop.shape[0] - 1, -1):
+            try:
+                self._stop[i] = int(pixel[i])
+            except IndexError:
+                break
+
+    def _insert_arrays(self, ravel: np.ndarray) -> np.ndarray:
+        identifier_insert = np.insert(ravel, 0, self.identifier)
+        stop_insert = np.insert(identifier_insert, 0, self._stop)
+        return stop_insert
 
     def encode(self, size: tuple = (250, 250), private: bool = False) -> None:
-        self._private = private
-
         image = np.array(np.random.randint(0, 256, size), dtype=np.uint8)
-        partial_ravel = image.ravel()[8:]
+        partial_ravel = image.ravel()[16:]
+        index_list = [CHARS.index(char) for char in self.text]
 
-        idx_list = [CHARS.index(char) for char in self.text]
-        factor = str(int(partial_ravel.shape[0] / len(idx_list)))
-
-        self._set_identifier(factor)
-
-        if len(partial_ravel) < len(idx_list):
+        if len(partial_ravel) < len(index_list):
             raise ValueError('image size is too small')
 
-        ravel = self._insert_identifier(partial_ravel)
+        factor = int(partial_ravel.shape[0] / len(index_list))
 
-        pos = zip(range(8, len(ravel), int(factor)), idx_list)
+        if not private:
+            self._set_identifier(str(factor))
 
-        for pixel, char in pos:
-            ravel[pixel] = char
+        pixels_factor = zip(range(0, len(partial_ravel), factor), index_list)
 
+        for pixel, char in pixels_factor:
+            partial_ravel[pixel] = char
+
+        if (pixel + factor) < len(partial_ravel):
+            self._set_stop(str(pixel + factor + 16))
+
+        ravel = self._insert_arrays(partial_ravel)
         self._image = ravel.reshape(size)
 
     def show(self) -> None:
         cv.imshow('Encoded Image', self._image)
         cv.waitKey(0)
-        cv.destroyAllWindows()
+        cv.destroyAllWindows() 
 
     def save(self, path: str) -> None:
-        if self._private:
+        if (self.identifier == ZEROS).all():
             image_path = pathlib.Path(path)
             cv.imwrite(
                 str(image_path.parent.resolve() / f'key_{image_path.name}'),
-                self.identifier,
+                np.concatenate((self._stop, self.identifier)),
             )
 
         cv.imwrite(path, self._image)
@@ -81,19 +86,22 @@ class Decoder:
     def _get_identifier(self, key: str) -> np.ndarray:
         identifier = cv.imread(key, cv.IMREAD_GRAYSCALE)
         identifier = identifier.ravel()
-
         return identifier
 
     def _get_factor(self, identifier: np.ndarray) -> int:
         factor = [str(n) for n in identifier]
         factor = int(''.join(factor))
-
         return factor
+
+    def _get_stop(self, stop: np.ndarray) -> np.ndarray:
+        stop = [str(n) for n in stop]
+        stop = int(''.join(stop))
+        return stop
 
     def decode(self, key: typing.Optional[str] = None) -> None:
         ravel = self.image.ravel()
-
-        identifier = ravel[:8]
+        stop = ravel[:8]
+        identifier = ravel[8:16]
 
         if (identifier == ZEROS).all():
             if key is not None:
@@ -102,7 +110,9 @@ class Decoder:
         else:
             factor = self._get_factor(identifier)
 
-        for pos in range(8, len(ravel) - factor, factor):
+        stop = self._get_stop(stop)
+
+        for pos in range(16, len(ravel) if stop == 0 else stop, factor):
             self.text += CHARS[ravel[pos]]
 
     def show(self) -> None:
