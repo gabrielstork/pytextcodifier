@@ -16,8 +16,8 @@ class Encoder:
             self.text = text
 
         self.identifier = ZEROS.copy()
-        self._stop = ZEROS.copy()
-        self._image = np.zeros((250, 250), dtype=np.uint8)
+        self.stop = ZEROS.copy()
+        self.image = np.zeros((250, 250), dtype=np.uint8)
 
     def _set_identifier(self, factor: str):
         for i in range(-1, -self.identifier.shape[0] - 1, -1):
@@ -27,9 +27,9 @@ class Encoder:
                 break
 
     def _set_stop(self, pixel: str):
-        for i in range(-1, -self._stop.shape[0] - 1, -1):
+        for i in range(-1, -self.stop.shape[0] - 1, -1):
             try:
-                self._stop[i] = int(pixel[i])
+                self.stop[i] = int(pixel[i])
             except IndexError:
                 break
 
@@ -37,7 +37,7 @@ class Encoder:
         identifier_insert = np.insert(
             ravel, 0, ZEROS if self._private else self.identifier
         )
-        stop_insert = np.insert(identifier_insert, 0, self._stop)
+        stop_insert = np.insert(identifier_insert, 0, self.stop)
         return stop_insert
 
     def encode(self, size: tuple = (250, 250), private: bool = False) -> None:
@@ -62,10 +62,10 @@ class Encoder:
 
         self._set_identifier(str(factor))
         ravel = self._insert_arrays(partial_ravel)
-        self._image = ravel.reshape(size)
+        self.image = ravel.reshape(size)
 
     def show(self) -> None:
-        cv.imshow('Encoded Image', self._image)
+        cv.imshow('Encoded Image', self.image)
         cv.waitKey(0)
         cv.destroyAllWindows()
 
@@ -74,10 +74,10 @@ class Encoder:
             image_path = pathlib.Path(path)
             cv.imwrite(
                 str(image_path.parent.resolve() / f'key_{image_path.name}'),
-                np.concatenate((self._stop, self.identifier)),
+                np.concatenate((self.stop, self.identifier)),
             )
 
-        cv.imwrite(path, self._image)
+        cv.imwrite(path, self.image)
 
 
 class Decoder:
@@ -95,7 +95,7 @@ class Decoder:
         factor = int(''.join(factor))
         return factor
 
-    def _get_index(self, stop: np.ndarray) -> np.ndarray:
+    def _get_index(self, stop: np.ndarray) -> int:
         index = [str(n) for n in stop]
         index = int(''.join(index))
         return index
