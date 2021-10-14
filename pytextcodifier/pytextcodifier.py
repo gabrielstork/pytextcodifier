@@ -17,7 +17,7 @@ class Encoder:
 
         self.identifier = ZEROS.copy()
         self._stop = ZEROS.copy()
-        self._image = np.zeros((250, 250))
+        self._image = np.zeros((250, 250), dtype=np.uint8)
 
     def _set_identifier(self, factor: str):
         for i in range(-1, -self.identifier.shape[0] - 1, -1):
@@ -34,11 +34,15 @@ class Encoder:
                 break
 
     def _insert_arrays(self, ravel: np.ndarray) -> np.ndarray:
-        identifier_insert = np.insert(ravel, 0, self.identifier)
+        identifier_insert = np.insert(
+            ravel, 0, ZEROS if self._private else self.identifier
+        )
         stop_insert = np.insert(identifier_insert, 0, self._stop)
         return stop_insert
 
     def encode(self, size: tuple = (250, 250), private: bool = False) -> None:
+        self._private = private
+
         image = np.array(np.random.randint(0, 256, size), dtype=np.uint8)
         partial_ravel = image.ravel()[16:]
         index_list = [CHARS.index(char) for char in self.text]
@@ -48,9 +52,6 @@ class Encoder:
 
         factor = int(partial_ravel.shape[0] / len(index_list))
 
-        if not private:
-            self._set_identifier(str(factor))
-
         pixels_factor = zip(range(0, len(partial_ravel), factor), index_list)
 
         for pixel, char in pixels_factor:
@@ -59,16 +60,17 @@ class Encoder:
         if (pixel + factor) < len(partial_ravel):
             self._set_stop(str(pixel + factor + 16))
 
+        self._set_identifier(str(factor))
         ravel = self._insert_arrays(partial_ravel)
         self._image = ravel.reshape(size)
 
     def show(self) -> None:
         cv.imshow('Encoded Image', self._image)
         cv.waitKey(0)
-        cv.destroyAllWindows() 
+        cv.destroyAllWindows()
 
     def save(self, path: str) -> None:
-        if (self.identifier == ZEROS).all():
+        if self._private:
             image_path = pathlib.Path(path)
             cv.imwrite(
                 str(image_path.parent.resolve() / f'key_{image_path.name}'),
@@ -84,8 +86,8 @@ class Decoder:
         self.text = ''
 
     def _get_identifier(self, key: str) -> np.ndarray:
-        identifier = cv.imread(key, cv.IMREAD_GRAYSCALE)
-        identifier = identifier.ravel()
+        key_array = cv.imread(key, cv.IMREAD_GRAYSCALE)
+        identifier = key_array.ravel()[8:]
         return identifier
 
     def _get_factor(self, identifier: np.ndarray) -> int:
@@ -93,10 +95,10 @@ class Decoder:
         factor = int(''.join(factor))
         return factor
 
-    def _get_stop(self, stop: np.ndarray) -> np.ndarray:
-        stop = [str(n) for n in stop]
-        stop = int(''.join(stop))
-        return stop
+    def _get_index(self, stop: np.ndarray) -> np.ndarray:
+        index = [str(n) for n in stop]
+        index = int(''.join(index))
+        return index
 
     def decode(self, key: typing.Optional[str] = None) -> None:
         ravel = self.image.ravel()
@@ -104,15 +106,12 @@ class Decoder:
         identifier = ravel[8:16]
 
         if (identifier == ZEROS).all():
-            if key is not None:
-                identifier = self._get_identifier(key)
-                factor = self._get_factor(identifier)
-        else:
-            factor = self._get_factor(identifier)
+            identifier = self._get_identifier(key)
 
-        stop = self._get_stop(stop)
+        factor = self._get_factor(identifier)
+        index = self._get_index(stop)
 
-        for pos in range(16, len(ravel) if stop == 0 else stop, factor):
+        for pos in range(16, len(ravel) if index == 0 else index, factor):
             self.text += CHARS[ravel[pos]]
 
     def show(self) -> None:
