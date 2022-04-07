@@ -1,6 +1,6 @@
 # pytextcodifier
 
-Turn your text files into codified images or your codified images into text files.
+Codify your text files or Python strings.
 
 You can simply:
 
@@ -24,87 +24,132 @@ pip install -r requirements.txt
 
 **pytextcodifier** allows you transform Python strings or text files (check `example.txt` and see the text file used to generate the image below) into encoded images like this:
 
-![Example](https://raw.githubusercontent.com/gabrielstork/text-codifier/main/images/example.png)
+![Example](https://raw.githubusercontent.com/gabrielstork/pytextcodifier/main/images/public_example.png)
 
-Every image has an 8-digit identifier (to be precise, the first 8 pixel values in the flattened image matrix). This identifier tells how the code should read the image, showing where the correct characters are located in the image matrix. A private image requires a key to correctly extract the text in it, in other side, if it is a non-private image, the text is extracted directly.
+Every image matrix has two 8 digit arrays called *stop* and *identifier* (to be precise, the first 16 pixel values in the flattened image matrix). The identifier tells how the code should read the image, showing where the correct characters are located in the matrix. A private image requires a key to correctly extract the text in it, on the other side, if it is a non-private image, the text is extracted directly.
 
-## Public
+## Examples
 
-### Encoding
+### Public Encoding
+
+Importing `Encoder` class.
 
 ```python
 from pytextcodifier import Encoder
-
-# Instantiating the class
-# The example.txt file contains the text: "This is an example!"
-text = Encoder('example.txt', is_file=True)
-
-# Encoding the text (Note: by default the generated image size is 250x250,
-# and it is not private).
-text.encode(size=(250, 250), private=False)
-
-# Seeing the generated image
-text.show()
-
-# Saving the image
-text.save('example.png')
 ```
 
-### Decoding
+Using the content of `example.txt`.
+
+```python
+text = Encoder('example.txt', is_file=True)
+```
+
+Using `encode()` method with default arguments to actually encode it.
+
+```python
+text.encode(size=(250, 250), private=False)
+```
+
+Seeing the generated encoded image (a new window will pop up).
+
+```python
+text.show()
+```
+
+Saving it.
+
+```python
+text.save('images/public_example.png')
+```
+
+### Public Decoding
+
+Importing `Decoder` class.
 
 ```python
 from pytextcodifier import Decoder
+```
 
-# Instantiating the class
-# The example.png file contains the text: "This is an example!"
+Instantiating the class passing an image as argument.
+
+```python
 image = Decoder('example.png')
+```
 
-# Decoding the image
+Decoding the image.
+
+```python
 image.decode()
+```
 
-# Seeing the text
+Seeing the text.
+
+```python
 image.show()
+```
 
-# Saving the text
+Saving the text.
+
+```python
 image.save('example.txt')
 ```
 
-## Private
+### Private Encoding
 
-### Encoding
+Importing `Encoder` class.
 
 ```python
 from pytextcodifier import Encoder
-
-# Instantiating the class
-# The example.txt file contains the text: "This is an example!"
-text = Encoder('example.txt', is_file=True)
-
-# Encoding the text
-text.encode(size=(250, 250), private=True)
-
-# Saving the image
-# This will save an extra image named 'key_example.png', you must use this to
-# get the text correctly when decoding it
-text.save('example.png')
 ```
 
-### Decoding
+Using the content of `example.txt`.
+
+```python
+text = Encoder('example.txt', is_file=True)
+```
+
+Using `encode()` method setting the `private` parameter to `True`.
+
+```python
+text.encode(size=(250, 250), private=True)
+```
+
+Saving it. This will save an extra image named 'key_private_example.png', you must use this to
+get the text correctly when decoding it.
+
+```python
+text.save('images/private_example.png')
+```
+
+### Private Decoding
+
+Importing `Decoder` class.
 
 ```python
 from pytextcodifier import Decoder
+```
 
-# Instantiating the class
-# The example.png file contains the text: "This is an example!"
+Instantiating the class passing an image as argument.
+
+```python
 image = Decoder('example.png')
+```
 
-# Decoding the image
-image.decode(key='key_example.png')
+Decoding the image.
 
-# Seeing the text
+```python
+image.decode(key='key_private_example.png')
+```
+
+Seeing the text.
+
+```python
 image.show()
+```
 
-# Saving the text
+Saving the text.
+
+```python
 image.save('example.txt')
 ```
 
